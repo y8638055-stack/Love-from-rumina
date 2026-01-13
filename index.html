@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Message For You ❤️</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #ff004c;
+            --accent: #ff6b9d;
+            --dark: #0a0a0a;
+            --glass: rgba(20, 20, 20, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--dark);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            height: 100vh;
+            overflow-y: hidden; /* Locked until entry */
+        }
+
+        /* --- CHERRY BLOSSOM CANVAS --- */
+        #sakura-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Behind content */
+            pointer-events: none;
+        }
+
+        /* --- AMBIENT BLOBS --- */
+        .ambient-light {
+            position: fixed;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 10s infinite ease-in-out;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: var(--primary); }
+        .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: purple; animation-delay: 2s; }
+        .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: var(--accent); animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        /* --- TEXT STYLES --- */
+        h1 {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 0, 76, 0.8);
+            margin-bottom: 20px;
+            min-height: 40px; /* Prevent layout shift during typing */
+        }
+        
+        p {
+            color: #ddd;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 24px;
+        }
+
+        /* Blinking Cursor for Typewriter */
+        .cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+            color: var(--primary);
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- LAYOUT SECTIONS --- */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            z-index: 2; /* Above canvas */
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            padding: 50px 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: translateY(50px);
+            opacity: 0; /* Handled by GSAP */
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(45deg, var(--primary), #ff4d4d);
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            box-shadow: 0 0 20px var(--primary);
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 40px var(--primary); }
+
+        /* --- SCREENS --- */
+        #entry-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: black;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        #loader-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: black;
+            z-index: 800;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .progress-container {
+            width: 80%;
+            max-width: 400px;
+            height: 6px;
+            background: #333;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            transition: width 0.1s linear;
+        }
+
+        #prank-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 900;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        #prank-img {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 10px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        @keyframes zoomIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        body.scroll-active { overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <canvas id="sakura-canvas"></canvas>
+
+    <div id="entry-screen">
+        <h1 style="font-size: 1.5rem; opacity: 0.8; letter-spacing: 3px;">TAP TO BEGIN</h1>
+        <div style="font-size: 3rem; margin-top: 20px; animation: pulse 2s infinite;">🌸</div>
+        <p style="font-size: 0.8rem; margin-top: 20px; opacity: 0.5;">(Turn Sound On)</p>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="song.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="ambient-light">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Hey You..."></h1>
+            <p class="type-para" data-text="I have been hiding this feeling for a while now."></p>
+            <p style="font-size: 0.8rem; margin-top: 15px; opacity: 0.6;">(Scroll down slowly)</p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Thinking of You"></h1>
+            <p class="type-para" data-text="Every time I see a notification from you, my heart does a little flip."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Analyzing Data"></h1>
+            <div style="font-size: 3rem; margin: 20px; text-align:center;">📊</div>
+            <p class="type-para" data-text="Running compatibility test... Result: 110% Perfect Match."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Your Smile"></h1>
+            <p class="type-para" data-text="It's literally illegal to be this cute. I had to report it."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Accessing Memories"></h1>
+            <div style="font-size: 3rem; margin: 20px; text-align:center;">📂</div>
+            <p class="type-para" data-text="Loading all the stupid jokes we laughed at..."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Wait for it..."></h1>
+            <p class="type-para" data-text="I wrote something special just for you."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Warning"></h1>
+            <div style="font-size: 3rem; margin: 20px; text-align:center;">⚠️</div>
+            <p class="type-para" data-text="High levels of cheesiness detected ahead. proceed with caution."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1 class="type-header" data-text="Almost Ready"></h1>
+            <p class="type-para" data-text="The feelings are rendering... Please hold."></p>
+        </div>
+    </section>
+
+    <section>
+        <div class="card gsap-reveal">
+            <h1>It's Here.</h1>
+            <p>This message is strictly for you.</p>
+            <button class="btn" onclick="startPrank()">OPEN IT</button>
+        </div>
+    </section>
+
+    <div id="loader-screen">
+        <h2 id="loader-text" style="color:white;">Decrypting Heart...</h2>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p style="margin-top:20px; font-size: 0.8rem; opacity: 0.7;">(Don't close...)</p>
+    </div>
+
+    <div id="prank-screen">
+        <h1 style="color: black; font-size: 3rem; margin-bottom: 10px;">SIKE!!! 🤣</h1>
+        
+        <img id="prank-img" src="https://media.tenor.com/l5_u4JgM7sgAAAAM/sike-tyler-the-creator.gif" alt="Prank Image">
+        
+        <h3 style="color: black; margin-top: 20px;">You really thought?</h3>
+        <p style="color: #333;">(Chal Chal Chal 🤟)</p>
+        
+        <button class="btn" onclick="location.reload()" style="margin-top: 20px; font-size: 0.8rem; padding: 10px 20px;">Get Pranked Again</button>
+    </div>
+
+    <script>
+        // --- 1. CHERRY BLOSSOM SCRIPT ---
+        const canvas = document.getElementById('sakura-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const petals = [];
+        const petalCount = 80;
+
+        class Petal {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 5 + 5;
+                this.speed = Math.random() * 2 + 1;
+                this.angle = Math.random() * 360;
+                this.spin = Math.random() < 0.5 ? -1 : 1;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.x += Math.sin(this.angle) * 0.5;
+                this.angle += 0.02;
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = `rgba(255, 183, 178, ${this.opacity})`;
+                ctx.beginPath();
+                // Draw a simple petal shape
+                ctx.ellipse(0, 0, this.size, this.size / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initSakura() {
+            for (let i = 0; i < petalCount; i++) {
+                petals.push(new Petal());
+            }
+            animateSakura();
+        }
+
+        function animateSakura() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petals.forEach(petal => {
+                petal.update();
+                petal.draw();
+            });
+            requestAnimationFrame(animateSakura);
+        }
+
+        initSakura();
+        
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+
+        // --- 2. TYPEWRITER EFFECT FUNCTION ---
+        function typeEffect(element, speed = 50) {
+            const text = element.getAttribute('data-text');
+            if(!text) return;
+            
+            element.innerText = ""; // Clear initial
+            element.classList.add('cursor'); // Add blinking cursor
+            
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.innerText += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    element.classList.remove('cursor'); // Remove cursor when done
+                }
+            }
+            type();
+        }
+
+
+        // --- 3. SCROLL & ENTRY LOGIC ---
+        const entryScreen = document.getElementById('entry-screen');
+        const bgMusic = document.getElementById('bg-music');
+        const body = document.body;
+
+        entryScreen.addEventListener('click', () => {
+            gsap.to(entryScreen, { opacity: 0, duration: 1, onComplete: () => {
+                entryScreen.style.display = 'none';
+                body.classList.add('scroll-active');
+            }});
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(e => console.log("Audio needed user interaction"));
+        });
+
+        // Register ScrollTrigger
+        gsap.registerPlugin(ScrollTrigger);
+
+        const cards = document.querySelectorAll('.gsap-reveal');
+
+        cards.forEach(card => {
+            // Animation for the card appearing
+            gsap.to(card, {
+                y: 0,
+                opacity: 1,
+                duration: 1.2,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 75%",
+                    onEnter: () => {
+                        // Trigger Typewriter ONLY when card enters view
+                        const header = card.querySelector('.type-header');
+                        const para = card.querySelector('.type-para');
+                        if(header) typeEffect(header, 80);
+                        // Delay paragraph typing slightly
+                        if(para) setTimeout(() => typeEffect(para, 30), 1000);
+                    }
+                }
+            });
+        });
+
+
+        // --- 4. PRANK LOGIC (SAME AS BEFORE) ---
+        function startPrank() {
+            Swal.fire({
+                title: 'Final Warning',
+                text: "The content you are about to see is extremely cheesy.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff004c',
+                cancelButtonColor: '#333',
+                confirmButtonText: 'I am ready!',
+                background: '#111',
+                color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    runFakeLoader();
+                }
+            });
+        }
+
+        function runFakeLoader() {
+            const loader = document.getElementById('loader-screen');
+            const bar = document.getElementById('progress-bar');
+            const text = document.getElementById('loader-text');
+            
+            loader.style.display = 'flex';
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                width++;
+                bar.style.width = width + '%';
+                if (width === 30) text.innerText = "Downloading Roses...";
+                if (width === 60) text.innerText = "Compiling Love Letter...";
+                if (width === 90) text.innerText = "System Overload...";
+                if (width >= 100) {
+                    clearInterval(interval);
+                    triggerReveal();
+                }
+            }, 60);
+        }
+
+        function triggerReveal() {
+            document.getElementById('loader-screen').style.display = 'none';
+            document.getElementById('prank-screen').style.display = 'flex';
+        }
+
+    </script>
+</body>
+</html>
